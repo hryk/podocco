@@ -1,5 +1,5 @@
 package Pod::Docco::Layout;
-use Moose;
+use Any::Moose;
 use File::Slurp qw/slurp/;
 use Text::Xslate qw/mark_raw/;
 

@@ -12,7 +12,8 @@ use Data::Dumper;
 
 use Pod::Docco::Layout;
 
-carp "WARNING: Pygments not found. Using webservice." unless which('pygmentize');
+carp "WARNING: Pygments not found. Using webservice." 
+  unless which('pygmentize');
 
 =head1 NAME
 
@@ -106,7 +107,6 @@ sub highlight {
   my $boundary = "\n\n".$self->options->{comment_chars}."------BOUNDARY------\n\n";
 
   # translate pod to HTML by Pod::Simple::HTML
-  # <h4 id="BOUNDARY.+">BOUNDARYBOUNDARY</h4>
   my $pod = join("\n\n=head4 BOUNDARYBOUNDARY\n\n", @{$docs_blocks});
   my $pod_html = "";
   my $parser = Pod::Simple::XHTML->new();
@@ -114,7 +114,7 @@ sub highlight {
   $parser->html_header("");
   $parser->html_footer("");
   $parser->parse_string_document($pod);
-  my $docs_html = [split(/\n<h4\sid=\"BOUNDARYBOUNDARY\d+\">BOUNDARYBOUNDARY<\/h4>\n/, $pod_html)];
+  my $docs_html = [split(/\n<h4\sid=\"BOUNDARYBOUNDARY\d*\">BOUNDARYBOUNDARY<\/h4>\n/, $pod_html)];
 
   # highlight codeblocks.
   my $code_stream = join $boundary, @{$code_blocks};
