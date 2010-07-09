@@ -1,0 +1,262 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+<title>Docco.pm</title>
+<link rel="stylesheet" href="http://jashkenas.github.com/docco/resources/docco.css">
+</head>
+<body>
+<div id='container'>
+<div id="background"></div>
+<div id="jump_to">
+Jump To &hellip;
+<div id="jump_wrapper">
+<div id="jump_page">
+</div>
+</div>
+</div>
+<table cellspacing=0 cellpadding=0>
+<thead>
+<tr>
+<th class=docs><h1>Docco.pm</h1></th>
+<th class=code></th>
+</tr>
+</thead>
+<tbody>
+<tr id='section-0'>
+  <td class=docs>
+    <div class="octowrap">
+    <a class="octothorpe" href="#section-0">#</a>
+    </div>
+    <h1 id="NAME">NAME</h1>
+
+<p>Pod::Docco</p>
+
+<h1 id="SYNOPSYS">SYNOPSYS</h1>
+
+<pre><code>    podocco lib/*.py</code></pre>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>Podocco is a Perl port of <a href="http://jashkenas.github.com/docco/">Docco</a>: the original quick-and-dirty documentation generator.</p>
+
+<p>It produces HTML that displays your comments alongside your code. Comments are passed through <a href="http://search.cpan.org/perldoc?Pod">Pod</a>, and code is passed through Pyhmemnts syntax highlighting. This page is the result of Pod::Docco against its own source file.</p>
+
+<h1 id="Methods">Methods</h1>
+
+  </td>
+  <td class=code>
+    <div class='highlight'>
+      <pre><span class="k">sub </span><span class="nf">BUILD</span> <span class="p">{</span>
+  <span class="k">my</span> <span class="nv">$self</span> <span class="o">=</span> <span class="nb">shift</span><span class="p">;</span>
+  <span class="k">my</span> <span class="nv">$data</span> <span class="o">=</span> <span class="nn">PPI::</span><span class="n">Document</span><span class="o">-&gt;</span><span class="k">new</span><span class="p">(</span><span class="nv">$self</span><span class="o">-&gt;</span><span class="n">filename</span><span class="p">);</span>
+  <span class="nv">$data</span><span class="o">-&gt;</span><span class="n">prune</span><span class="p">(</span><span class="s">&#39;PPI::Token::Comment&#39;</span><span class="p">);</span>
+  <span class="nv">$self</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">(</span><span class="nv">$data</span><span class="p">);</span>
+  <span class="nv">$self</span><span class="o">-&gt;</span><span class="n">sections</span><span class="p">(</span><span class="nv">$self</span><span class="o">-&gt;</span><span class="n">highlight</span><span class="p">(</span><span class="nv">$self</span><span class="o">-&gt;</span><span class="n">split_tuples</span><span class="p">(</span><span class="nv">$self</span><span class="o">-&gt;</span><span class="n">parse</span><span class="p">)));</span>
+<span class="p">}</span></pre>
+    </div>
+  </td>
+</tr>
+<tr id='section-1'>
+  <td class=docs>
+    <div class="octowrap">
+    <a class="octothorpe" href="#section-1">#</a>
+    </div>
+    
+<h2 id="to_html">to_html</h2>
+
+<p>Generate HTML output for the entire document.</p>
+
+  </td>
+  <td class=code>
+    <div class='highlight'>
+      <pre><span class="k">sub </span><span class="nf">to_html</span> <span class="p">{</span>
+  <span class="k">my</span> <span class="nv">$self</span> <span class="o">=</span> <span class="nb">shift</span><span class="p">;</span>
+  <span class="nn">Pod::Docco::</span><span class="n">Layout</span><span class="o">-&gt;</span><span class="k">new</span><span class="p">(</span><span class="nv">$self</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">render</span><span class="p">();</span>
+<span class="p">}</span></pre>
+    </div>
+  </td>
+</tr>
+<tr id='section-2'>
+  <td class=docs>
+    <div class="octowrap">
+    <a class="octothorpe" href="#section-2">#</a>
+    </div>
+    
+<h2 id="highlight">highlight</h2>
+
+<p>Take the result of `split` and apply Markdown formatting to comments and syntax highlighting to source code.</p>
+
+  </td>
+  <td class=code>
+    <div class='highlight'>
+      <pre><span class="k">sub </span><span class="nf">highlight</span> <span class="p">{</span>
+  <span class="k">my</span> <span class="nv">$self</span>   <span class="o">=</span> <span class="nb">shift</span><span class="p">;</span>
+  <span class="k">my</span> <span class="nv">$blocks</span> <span class="o">=</span> <span class="nb">shift</span><span class="p">;</span>
+  <span class="k">my</span> <span class="p">(</span><span class="nv">$docs_blocks</span><span class="p">,</span> <span class="nv">$code_blocks</span><span class="p">)</span> <span class="o">=</span> <span class="nv">@$blocks</span><span class="p">;</span>
+  <span class="k">my</span> <span class="nv">$boundary</span> <span class="o">=</span> <span class="s">&quot;\n\n&quot;</span><span class="o">.</span><span class="nv">$self</span><span class="o">-&gt;</span><span class="n">options</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">comment_chars</span><span class="p">}</span><span class="o">.</span><span class="s">&quot;------BOUNDARY------\n\n&quot;</span><span class="p">;</span>
+
+  <span class="k">my</span> <span class="nv">$pod</span> <span class="o">=</span> <span class="nb">join</span><span class="p">(</span><span class="s">&quot;\n\n=head4 BOUNDARYBOUNDARY\n\n&quot;</span><span class="p">,</span> <span class="nv">@</span><span class="p">{</span><span class="nv">$docs_blocks</span><span class="p">});</span>
+  <span class="k">my</span> <span class="nv">$pod_html</span> <span class="o">=</span> <span class="s">&quot;&quot;</span><span class="p">;</span>
+  <span class="k">my</span> <span class="nv">$parser</span> <span class="o">=</span> <span class="nn">Pod::Simple::</span><span class="n">XHTML</span><span class="o">-&gt;</span><span class="k">new</span><span class="p">();</span>
+  <span class="nv">$parser</span><span class="o">-&gt;</span><span class="n">output_string</span><span class="p">(</span><span class="o">\</span><span class="nv">$pod_html</span><span class="p">);</span>
+  <span class="nv">$parser</span><span class="o">-&gt;</span><span class="n">html_header</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">);</span>
+  <span class="nv">$parser</span><span class="o">-&gt;</span><span class="n">html_footer</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">);</span>
+  <span class="nv">$parser</span><span class="o">-&gt;</span><span class="n">parse_string_document</span><span class="p">(</span><span class="nv">$pod</span><span class="p">);</span>
+  <span class="k">my</span> <span class="nv">$docs_html</span> <span class="o">=</span> <span class="p">[</span><span class="nb">split</span><span class="p">(</span><span class="sr">/\n&lt;h4\sid=\&quot;BOUNDARYBOUNDARY\d*\&quot;&gt;BOUNDARYBOUNDARY&lt;\/h4&gt;\n/</span><span class="p">,</span> <span class="nv">$pod_html</span><span class="p">)];</span>
+
+  <span class="k">my</span> <span class="nv">$code_stream</span> <span class="o">=</span> <span class="nb">join</span> <span class="nv">$boundary</span><span class="p">,</span> <span class="nv">@</span><span class="p">{</span><span class="nv">$code_blocks</span><span class="p">};</span>
+
+  <span class="k">my</span> <span class="nv">$code_html</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">which</span><span class="p">(</span><span class="s">&quot;pygmentize&quot;</span><span class="p">))</span> <span class="p">{</span>
+    <span class="nv">$code_html</span> <span class="o">=</span> <span class="nv">$self</span><span class="o">-&gt;</span><span class="n">highlight_pygmentize</span><span class="p">(</span><span class="nv">$code_stream</span><span class="p">);</span>
+  <span class="p">}</span> 
+  <span class="k">else</span> <span class="p">{</span>
+    <span class="n">confess</span> <span class="s">&#39;TODO: implement `highlight_webservice`&#39;</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="nv">$code_html</span> <span class="o">=</span> <span class="p">[</span>
+  <span class="nb">map</span> <span class="p">{</span> <span class="p">(</span><span class="k">my</span> <span class="nv">$x</span> <span class="o">=</span> <span class="nv">$_</span> <span class="p">)</span> <span class="o">=~</span> <span class="sr">s/\n*?&lt;\/pre&gt;&lt;\/div&gt;\n//</span><span class="p">;</span> <span class="nv">$x</span> <span class="p">}</span>
+  <span class="nb">map</span> <span class="p">{</span> <span class="p">(</span><span class="k">my</span> <span class="nv">$x</span> <span class="o">=</span> <span class="nv">$_</span> <span class="p">)</span> <span class="o">=~</span> <span class="sr">s/\n*?&lt;div\sclass=\&quot;highlight\&quot;&gt;&lt;pre&gt;//</span><span class="p">;</span> <span class="nv">$x</span><span class="p">}</span>
+  <span class="nb">split</span><span class="p">(</span><span class="sr">/\n*&lt;span\sclass=\&quot;c.\&quot;&gt;#------BOUNDARY------&lt;\/span&gt;\n*/</span><span class="p">,</span> <span class="nv">$code_html</span><span class="p">)</span>
+  <span class="p">];</span>
+
+  <span class="p">[</span> <span class="p">(</span> <span class="nb">map</span> <span class="p">{</span> <span class="p">[</span><span class="nv">$docs_html</span><span class="o">-&gt;</span><span class="p">[</span><span class="nv">$_</span><span class="p">],</span> <span class="nv">$code_html</span><span class="o">-&gt;</span><span class="p">[</span><span class="nv">$_</span><span class="p">]]</span> <span class="p">}</span> <span class="p">(</span><span class="mi">0</span><span class="o">..</span><span class="nv">$#$docs_html</span><span class="p">)</span> <span class="p">)</span> <span class="p">];</span>
+<span class="p">}</span></pre>
+    </div>
+  </td>
+</tr>
+<tr id='section-3'>
+  <td class=docs>
+    <div class="octowrap">
+    <a class="octothorpe" href="#section-3">#</a>
+    </div>
+    
+<h2 id="highlight-with-pygment">highlight with pygment</h2>
+
+<p>no documents.</p>
+
+  </td>
+  <td class=code>
+    <div class='highlight'>
+      <pre><span class="k">sub </span><span class="nf">highlight_pygmentize</span> <span class="p">{</span>
+  <span class="k">my</span> <span class="nv">$self</span> <span class="o">=</span> <span class="nb">shift</span><span class="p">;</span>
+  <span class="k">my</span> <span class="nv">$code</span> <span class="o">=</span> <span class="nb">shift</span><span class="p">;</span>
+
+  <span class="k">my</span> <span class="nv">$lang</span> <span class="o">=</span> <span class="nv">$self</span><span class="o">-&gt;</span><span class="n">options</span><span class="o">-&gt;</span><span class="p">{</span><span class="s">&#39;language&#39;</span><span class="p">};</span>
+  <span class="k">my</span> <span class="nv">$cmd</span>  <span class="o">=</span> <span class="p">[</span><span class="s">&#39;pygmentize&#39;</span><span class="p">,</span> <span class="s">&#39;-l&#39;</span><span class="p">,</span> <span class="nv">$lang</span> <span class="p">,</span><span class="s">&#39;-f&#39;</span><span class="p">,</span> <span class="s">&#39;html&#39;</span><span class="p">];</span>
+  <span class="k">my</span> <span class="p">(</span><span class="nv">$html</span><span class="p">,</span> <span class="nv">$err</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">);</span>
+
+  <span class="n">run</span> <span class="nv">$cmd</span><span class="p">,</span> <span class="o">\</span><span class="nv">$code</span><span class="p">,</span> <span class="o">\</span><span class="nv">$html</span> <span class="ow">or</span> <span class="n">confess</span> <span class="s">&quot;pygmentize : $!&quot;</span><span class="p">;</span> 
+
+  <span class="k">return</span> <span class="nv">$html</span><span class="p">;</span>
+<span class="p">}</span></pre>
+    </div>
+  </td>
+</tr>
+<tr id='section-4'>
+  <td class=docs>
+    <div class="octowrap">
+    <a class="octothorpe" href="#section-4">#</a>
+    </div>
+    
+<h2 id="split_tuples">split_tuples</h2>
+
+<pre><code> Take the list of paired *sections* two-tuples and split into two
+ separate lists: one holding the comments with leaders removed and
+ one with the code blocks.</code></pre>
+
+  </td>
+  <td class=code>
+    <div class='highlight'>
+      <pre><span class="k">sub </span><span class="nf">split_tuples</span> <span class="p">{</span>
+  <span class="k">my</span> <span class="nv">$self</span>     <span class="o">=</span> <span class="nb">shift</span><span class="p">;</span>
+  <span class="k">my</span> <span class="nv">$sections</span> <span class="o">=</span> <span class="nb">shift</span><span class="p">;</span>
+  <span class="k">my</span> <span class="p">(</span> <span class="nv">$docs_blocks</span> <span class="p">,</span> <span class="nv">$code_blocks</span> <span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="o">[]</span><span class="p">,</span> <span class="o">[]</span><span class="p">);</span>
+  <span class="k">for</span> <span class="k">my</span> <span class="nv">$tuple</span> <span class="p">(</span><span class="nv">@$sections</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nb">push</span> <span class="nv">@$docs_blocks</span><span class="p">,</span> <span class="nb">join</span><span class="p">(</span> <span class="s">&quot;\n&quot;</span><span class="p">,</span>  <span class="nv">@</span><span class="p">{</span><span class="nv">$tuple</span><span class="o">-&gt;</span><span class="p">[</span><span class="mi">0</span><span class="p">]}</span> <span class="p">);</span>
+    <span class="nb">push</span> <span class="nv">@$code_blocks</span><span class="p">,</span> <span class="nb">join</span><span class="p">(</span><span class="s">&quot;\n&quot;</span><span class="p">,</span> <span class="nb">map</span> <span class="p">{</span>
+      <span class="sr">/^(\t+)/</span><span class="p">;</span>
+      <span class="k">my</span> <span class="nv">$tab</span> <span class="o">=</span> <span class="nb">length</span> <span class="nv">$1</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nv">$tab</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">my</span> <span class="nv">$white</span> <span class="o">=</span> <span class="s">&#39; &#39;</span> <span class="n">x</span> <span class="nv">$tab</span><span class="p">;</span>
+        <span class="sr">s/^\t+/$white/</span><span class="p">;</span>
+      <span class="p">}</span>
+      <span class="k">else</span> <span class="p">{</span>
+        <span class="nv">$_</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span> <span class="nv">@</span><span class="p">{</span><span class="nv">$tuple</span><span class="o">-&gt;</span><span class="p">[</span><span class="mi">1</span><span class="p">]});</span>
+  <span class="p">}</span>
+
+  <span class="k">return</span> <span class="p">[</span><span class="nv">$docs_blocks</span><span class="p">,</span> <span class="nv">$code_blocks</span><span class="p">];</span>
+<span class="p">}</span></pre>
+    </div>
+  </td>
+</tr>
+<tr id='section-5'>
+  <td class=docs>
+    <div class="octowrap">
+    <a class="octothorpe" href="#section-5">#</a>
+    </div>
+    
+<h2 id="Internal-Parsing-and-Highlighting">Internal Parsing and Highlighting</h2>
+
+<p>Parse the raw file data into a list of two-tuples. Each tuple has the form `[$docs, $code]` where both elements are array-refs containing the raw lines parsed from the input file. The first line is ignored if it is a shebang line.</p>
+
+
+  </td>
+  <td class=code>
+    <div class='highlight'>
+      <pre><span class="k">sub </span><span class="nf">parse</span> <span class="p">{</span>
+  <span class="k">my</span> <span class="nv">$self</span> <span class="o">=</span> <span class="nb">shift</span><span class="p">;</span>
+  <span class="k">my</span> <span class="nv">$sections</span> <span class="o">=</span> <span class="o">[]</span><span class="p">;</span>
+  <span class="k">my</span> <span class="p">(</span><span class="nv">$prev_pod</span><span class="p">,</span> <span class="nv">$prev_code_start</span><span class="p">);</span>
+
+  <span class="k">for</span> <span class="k">my</span> <span class="nv">$pod</span> <span class="p">(</span><span class="nv">@</span><span class="p">{</span><span class="nv">$self</span><span class="o">-&gt;</span><span class="n">data</span><span class="o">-&gt;</span><span class="n">find</span><span class="p">(</span><span class="n">sub</span><span class="p">{</span><span class="nv">$_</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">isa</span><span class="p">(</span><span class="s">&#39;PPI::Token::Pod&#39;</span><span class="p">)})})</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nv">$prev_pod</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">my</span> <span class="p">(</span><span class="nv">$docs</span><span class="p">,</span> <span class="nv">$code</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="o">[]</span><span class="p">,</span> <span class="o">[]</span><span class="p">);</span>
+      <span class="nv">$code</span> <span class="o">=</span> <span class="nv">$self</span><span class="o">-&gt;</span><span class="n">get_code_blocks</span><span class="p">(</span><span class="nv">$prev_code_start</span><span class="p">,</span> <span class="nv">$pod</span><span class="o">-&gt;</span><span class="n">line_number</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+      <span class="nb">push</span> <span class="nv">@$docs</span><span class="p">,</span> <span class="nb">split</span><span class="p">(</span><span class="s">&quot;\n&quot;</span><span class="p">,</span> <span class="nv">$prev_pod</span><span class="o">-&gt;</span><span class="n">content</span><span class="p">);</span>
+      <span class="nb">push</span> <span class="nv">@$sections</span><span class="p">,</span> <span class="p">[</span><span class="nv">$docs</span><span class="p">,</span><span class="nv">$code</span><span class="p">];</span>
+    <span class="p">}</span>
+    <span class="nv">$prev_pod</span> <span class="o">=</span> <span class="nv">$pod</span><span class="p">;</span>
+    <span class="nv">$prev_code_start</span> <span class="o">=</span> <span class="nv">$pod</span><span class="o">-&gt;</span><span class="n">snext_sibling</span><span class="o">-&gt;</span><span class="n">line_number</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="nb">push</span> <span class="nv">@$sections</span><span class="p">,</span> <span class="p">[</span>
+    <span class="p">[</span><span class="nb">split</span><span class="p">(</span><span class="s">&quot;\n&quot;</span><span class="p">,</span> <span class="nv">$prev_pod</span><span class="o">-&gt;</span><span class="n">content</span><span class="p">)],</span>
+    <span class="nv">$self</span><span class="o">-&gt;</span><span class="n">get_code_blocks</span><span class="p">(</span><span class="nv">$prev_code_start</span><span class="p">,</span> <span class="nv">$self</span><span class="o">-&gt;</span><span class="n">data</span><span class="o">-&gt;</span><span class="n">last_element</span><span class="o">-&gt;</span><span class="n">line_number</span><span class="p">)</span>
+  <span class="p">];</span>
+
+  <span class="k">return</span> <span class="nv">$sections</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="k">sub </span><span class="nf">get_code_blocks</span> <span class="p">{</span>
+  <span class="k">my</span> <span class="nv">$self</span> <span class="o">=</span> <span class="nb">shift</span><span class="p">;</span>
+  <span class="k">my</span> <span class="p">(</span><span class="nv">$start</span><span class="p">,</span> <span class="nv">$end</span><span class="p">)</span> <span class="o">=</span> <span class="nv">@_</span><span class="p">;</span>
+  <span class="k">my</span> <span class="nv">$code</span> <span class="o">=</span> <span class="o">[]</span><span class="p">;</span>
+  <span class="k">my</span> <span class="nv">$statements</span> <span class="o">=</span> <span class="nv">$self</span><span class="o">-&gt;</span><span class="n">data</span><span class="o">-&gt;</span><span class="n">find</span><span class="p">(</span><span class="n">sub</span><span class="p">{</span>
+      <span class="p">(</span><span class="nv">$_</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">parent</span> <span class="o">==</span> <span class="nv">$_</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">and</span>
+      <span class="p">(</span>
+        <span class="nv">$_</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">line_number</span> <span class="o">&gt;=</span> <span class="nv">$start</span> <span class="ow">and</span>
+        <span class="nv">$_</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">line_number</span> <span class="o">&lt;</span>  <span class="nv">$end</span>
+      <span class="p">)</span>
+    <span class="p">});</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="nv">$statements</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">for</span> <span class="k">my</span> <span class="nv">$state</span> <span class="p">(</span><span class="nv">@$statements</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">my</span> <span class="nv">$text</span> <span class="o">=</span> <span class="nv">$state</span><span class="o">-&gt;</span><span class="n">content</span><span class="o">.</span><span class="s">&quot;\n\n&quot;</span><span class="p">;</span>
+      <span class="nb">push</span> <span class="nv">@$code</span><span class="p">,</span> <span class="nb">split</span><span class="p">(</span><span class="s">&quot;\n&quot;</span><span class="p">,</span> <span class="nv">$text</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="nv">$code</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="nb">no</span> <span class="nn">Any::</span><span class="n">Moose</span><span class="p">;</span></pre>
+    </div>
+  </td>
+</tr>
+</table>
+</div>
+</body>
