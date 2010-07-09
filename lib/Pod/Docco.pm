@@ -4,12 +4,15 @@ use Any::Moose;
 use version 0.77; our $VERSION = version->declare('v0.0.1');
 use Carp qw(carp confess);
 use File::Which qw{which};
-use Pod::Docco::Layout;
 use File::Slurp qw{slurp};
 use PPI;
 use IPC::Run qw(run timeout);
+use Pod::Simple::XHTML;
+use Data::Dumper;
 
-carp "WARNING: Pygments not found. Using webservice." unless which('pigmentize');
+use Pod::Docco::Layout;
+
+carp "WARNING: Pygments not found. Using webservice." unless which('pygmentize');
 
 =head1 NAME
 
@@ -38,50 +41,56 @@ source file.
 has 'filename' => (
   is       => 'rw',
   isa      => 'Str',
-  requires => 1
+  required => 1
 );
 
 has 'options' => (
   is  => 'rw',
   isa => 'HashRef',
-  requires => 0,
-  default => {
+  required => 0,
+  default => sub { {
     'language'      => 'perl',
     'comment_chars' => '#',
-  }
+  } }
 );
 
 has 'sources' => (
   is  => 'rw',
   isa => 'ArrayRef',
-  requires => 0,
+  required => 0,
   default => sub { [] }
 );
 
 has 'sections' => (
   is  => 'rw',
   isa => 'ArrayRef',
-  requires => 0
+  required => 0
 );
 
-has 'data' => {
+has 'data' => (
   is  => 'rw',
   isa => 'PPI::Document',
-  requires => 0
-};
+  required => 0
+);
 
 sub BUILD {
   my $self = shift;
-  my $data = PPI::Document->($self->filename);
+  my $data = PPI::Document->new($self->filename);
   $data->prune('PPI::Token::Comment');
   $self->data($data);
-  $self->sections($self->highlight($self->parse));
+  $self->sections($self->highlight($self->split($self->parse)));
 }
 
-# sub split {
-#   my $self = shift;
-#   my ($doc_blocks, $code_blocks) = ([],[]);
-# }
+=head2 to_html
+
+Generate HTML output for the entire document.
+
+=cut
+
+sub to_html {
+  my $self = shift;
+  Pod::Docco::Layout->new($self)->render();
+}
 
 =head2 highlight
 
@@ -94,14 +103,40 @@ sub highlight {
   my $self   = shift;
   my $blocks = shift;
   my ($docs_blocks, $code_blocks) = @$blocks;
-  my $code_stream = join "\n\n------BOUNDARY------\n\n", $code_blocks;
-  my $code_html = ''; 
+  my $boundary = "\n\n".$self->options->{comment_chars}."------BOUNDARY------\n\n";
+
+  # translate pod to HTML by Pod::Simple::HTML
+  # <h4 id="BOUNDARY.+">BOUNDARYBOUNDARY</h4>
+  my $pod = join("\n\n=head4 BOUNDARYBOUNDARY\n\n", @{$docs_blocks});
+  my $pod_html = "";
+  my $parser = Pod::Simple::XHTML->new();
+  $parser->output_string(\$pod_html);
+  $parser->html_header("");
+  $parser->html_footer("");
+  $parser->parse_string_document($pod);
+  my $docs_html = [split(/\n<h4\sid=\"BOUNDARYBOUNDARY\d+\">BOUNDARYBOUNDARY<\/h4>\n/, $pod_html)];
+
+  # highlight codeblocks.
+  my $code_stream = join $boundary, @{$code_blocks};
+
+  my $code_html = '';
+
   if (which("pygmentize")) {
-    $code_html = highlight_pygmentize($code_stream);
+    $code_html = $self->highlight_pygmentize($code_stream);
   } 
   else {
     confess 'TODO: implement `highlight_webservice`';
   }
+
+  # remove BOUNDARY
+  $code_html = [
+  map { (my $x = $_ ) =~ s/\n*?<\/pre><\/div>\n//; $x }
+  map { (my $x = $_ ) =~ s/\n*?<div\sclass=\"highlight\"><pre>//; $x}
+  split(/\n<span\sclass=\"c.\">#------BOUNDARY------<\/span>\n/, $code_html)
+  ];
+
+  # zip code and docs.
+  [ ( map { [$docs_html->[$_], $code_html->[$_]] } (0..$#$docs_html) ) ];
 }
 
 =head2 highlight with pygment
@@ -113,13 +148,46 @@ no documents.
 sub highlight_pygmentize {
   my $self = shift;
   my $code = shift;
+
   my $lang = $self->options->{'language'};
-  my $cmd  = [qw/pygmentize -l $lang -f html/];
+  my $cmd  = ['pygmentize', '-l', $lang ,'-f', 'html'];
   my ($html, $err) = ('', '');
-  
-  run $cmd, \$in, \$html, \$err or confess "pygmentize : $?"; 
+
+  run $cmd, \$code, \$html or confess "pygmentize : $!"; 
 
   return $html;
+}
+
+=head2 split_tuples
+
+ Take the list of paired *sections* two-tuples and split into two
+ separate lists: one holding the comments with leaders removed and
+ one with the code blocks.
+
+=cut
+
+sub split {
+  my $self     = shift;
+  my $sections = shift;
+  my ( $docs_blocks , $code_blocks ) = ([], []);
+  for my $tuple (@$sections) {
+    push @$docs_blocks, join( "\n",  @{$tuple->[0]} );
+    push @$code_blocks, join("\n", map {
+      # tabs = line.match(/^(\t+)/)
+      # tabs ? line.sub(/^\t+/, '  ' * tabs.captures[0].length) : line
+      /^(\t+)/;
+      my $tab = length $1;
+      if ($tab) {
+        my $white = ' ' x $tab;
+        s/^\t+/$white/;
+      }
+      else {
+        $_;
+      }
+    } @{$tuple->[1]});
+  }
+
+  return [$docs_blocks, $code_blocks];
 }
 
 =head2 Internal Parsing and Highlighting
@@ -134,24 +202,28 @@ is a shebang line.
 sub parse {
   my $self = shift;
   my $sections = [];
-  my ($docs, $code) = ([],[]);
   my $start_lnum = 0;
 
-  for my $pod ($self->data->find(sub{$_[1]->isa('PPI::Token::Pod')})) {
-
+  for my $pod (@{$self->data->find(sub{$_[1]->isa('PPI::Token::Pod')})}) {
+    my ($docs, $code) = ([],[]);
     my $statements = $self->data->find(sub{
-        ( $_[1]->line_number > $start_lnum )             and
-        ( $_[1]->line_number < ($pod->line_number - 1) ) and
+        ( $_[1]->line_number > $start_lnum )        and
+        ( $_[1]->line_number < $pod->line_number )  and
         ( $_[1]->class eq 'PPI::Statement' )
       });
 
-    for my $state (@$statements) {
-      my $text = $state->content()."\n";
-      push @$code, split("\n", $text);
+    if ($statements) {
+      for my $state (@$statements) {
+        my $text = $state->content."\n\n";
+        push @$code, split("\n", $text);
+      }
     }
-
+    else {
+      $code = [];
+    }
     push @$docs, split("\n", $pod->content);
-    puths @$sections, [$docs,$code];
+    push @$sections, [$docs,$code];
+    $start_lnum = $pod->line_number;
   }
 
   return $sections;
