@@ -8,6 +8,8 @@ all_from 'lib/Pod/Docco.pm';
 
 requires  'version' => '0.77';
 requires  'Any::Moose';
+recommends  'Mouse';
+recommends  'MouseX::NativeTraits';
 requires  'File::Which';
 requires  'File::Slurp';
 requires  'Text::Xslate';

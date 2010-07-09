@@ -12,11 +12,6 @@ has 'doc' => (
 has 'template' => (
   is  => 'rw',
   isa => 'Str',
-#  lazy => 1,
-#  default => sub { 
-#    no warnings;
-#    slurp(\*DATA);
-#  }
 );
 
 has 'template_vars' => (
@@ -46,10 +41,26 @@ around "BUILDARGS" => sub {
 # call after construction.
 sub BUILD {
   my $self = shift; 
+  
+  $self->set_template_vars()->load_template();
+}
+
+sub load_template {
+  my $self = shift;
+  my $template = slurp(\*DATA);
+  $self->template($template);
+  $self;
+}
+
+sub set_template_vars {
+  my $self = shift;
+
+  # Title
   my ($volume,$directories,$file) = File::Spec->splitpath( $self->doc->filename );
 
   $self->set_var('title', $file);
 
+  # Sources section
   my ( $sources_exist , $sources ) = (0, []);
   if (scalar @{$self->doc->sources} > 1) {
     $sources_exist = 1;
@@ -63,9 +74,11 @@ sub BUILD {
       }
     }
   }
+
   $self->set_var('sources?', $sources_exist);
   $self->set_var('sources',  $sources);
 
+  # Docs and Codes
   my $num = 0;
   my $sections = [];
   for my $section (@{$self->doc->sections}) {
@@ -76,8 +89,7 @@ sub BUILD {
     }
   }
   $self->set_var('sections', $sections);
-  my $template_string = slurp(\*DATA);
-  $self->template($template_string);
+  $self;
 }
 
 sub render {
@@ -85,6 +97,8 @@ sub render {
   my $tx = Text::Xslate->new();
   $tx->render_string($self->template, $self->template_vars);
 }
+
+no Any::Moose;
 
 1;
 

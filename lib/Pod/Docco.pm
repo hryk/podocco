@@ -230,5 +230,4 @@ sub parse {
 }
 
 no Any::Moose;
-
 1;
